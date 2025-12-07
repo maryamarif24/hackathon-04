@@ -249,7 +249,7 @@ npm run serve
 1. **Push to GitHub**:
 
 ```bash
-git remote add origin https://github.com/yourusername/physical-ai-textbook
+git remote add origin https://github.com/maryamarif24/hackathon-4.git
 git push -u origin master
 ```
 
