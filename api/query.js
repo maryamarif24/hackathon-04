@@ -17,7 +17,7 @@ export default function handler(req, res) {
       return res.status(405).json({ error: 'Method not allowed' });
     }
 
-    const { question, context, use_context_only = false } = req.body || {};
+    const { question, context, use_context_only = false, chapter_id = null } = req.body || {};
     if (!question) {
       return res.status(400).json({ error: 'Question is required' });
     }
@@ -116,26 +116,52 @@ export default function handler(req, res) {
     let bestMatch = null;
     let maxScore = 0;
 
+    // Chapter-aware scoring: boost scores for matching chapter
+    const chapterBoost = chapter_id ? 0.5 : 0;
+
     Object.entries(responses).forEach(([topic, data]) => {
-      const score = data.keywords.filter(kw => q.includes(kw)).length;
+      let score = data.keywords.filter(kw => q.includes(kw)).length;
+
+      // Apply chapter boost if chapter_id provided
+      if (chapter_id && data.sources && data.sources.length > 0) {
+        const chapterMatch = data.sources.some(s => s.chapter_id === chapter_id);
+        if (chapterMatch) {
+          score += chapterBoost;
+        }
+      }
+
       if (score > maxScore) {
         maxScore = score;
-        bestMatch = data;
+        bestMatch = { ...data, _topic: topic };
       }
     });
 
     if (bestMatch && maxScore > 0) {
+      // Add chapter context note if chapter_id is specified
+      let answer = bestMatch.answer;
+      if (chapter_id) {
+        answer = `*[Chapter ${chapter_id} Context]*\n\n${answer}`;
+      }
+
       return res.status(200).json({
-        answer: bestMatch.answer,
+        answer: answer,
         sources: bestMatch.sources,
+        chapter_id: chapter_id,
         query_time_ms: 42.5
       });
     }
 
     // Fallback: Comprehensive overview
+    let fallbackAnswer = "I can help you learn about **Physical AI & Humanoid Robotics**!\n\n### Available Topics:\n\n**Chapter 1: Physical AI**\n- What is Physical AI?\n- Applications and use cases\n- Core components\n\n**Chapter 2: Humanoid Robotics**\n- Mechanical design\n- Sensors and actuators\n- Modern examples (Tesla Optimus, Atlas)\n\n**Chapter 3: ROS 2**\n- Architecture and communication\n- Tools (RViz, Gazebo, MoveIt)\n- Real-time capabilities\n\n**Chapter 4: Simulation**\n- Gazebo and Isaac Sim\n- Digital twins\n- Sim-to-real transfer\n\n**Chapter 5: VLA Systems**\n- RT-2, PaLM-E, OpenVLA\n- Training and deployment\n- Natural language control\n\n**Chapter 6: Integration**\n- System design\n- Best practices\n- Real-world deployment\n\n### Try asking:\n- What is Physical AI?\n- Tell me about humanoid robots\n- How does ROS 2 work?\n- Explain VLA systems\n- What sensors do robots use?\n- How to control a robot?";
+
+    if (chapter_id) {
+      fallbackAnswer = `*[Chapter ${chapter_id} Context]*\n\n${fallbackAnswer}`;
+    }
+
     return res.status(200).json({
-      answer: "I can help you learn about **Physical AI & Humanoid Robotics**!\n\n### Available Topics:\n\n**Chapter 1: Physical AI**\n- What is Physical AI?\n- Applications and use cases\n- Core components\n\n**Chapter 2: Humanoid Robotics**\n- Mechanical design\n- Sensors and actuators\n- Modern examples (Tesla Optimus, Atlas)\n\n**Chapter 3: ROS 2**\n- Architecture and communication\n- Tools (RViz, Gazebo, MoveIt)\n- Real-time capabilities\n\n**Chapter 4: Simulation**\n- Gazebo and Isaac Sim\n- Digital twins\n- Sim-to-real transfer\n\n**Chapter 5: VLA Systems**\n- RT-2, PaLM-E, OpenVLA\n- Training and deployment\n- Natural language control\n\n**Chapter 6: Integration**\n- System design\n- Best practices\n- Real-world deployment\n\n### Try asking:\n- What is Physical AI?\n- Tell me about humanoid robots\n- How does ROS 2 work?\n- Explain VLA systems\n- What sensors do robots use?\n- How to control a robot?",
+      answer: fallbackAnswer,
       sources: [],
+      chapter_id: chapter_id,
       query_time_ms: 35.8
     });
   } catch (error) {

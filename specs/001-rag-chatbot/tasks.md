@@ -117,11 +117,11 @@
 
 ### Implementation for User Story 3
 
-- [ ] T030 [US3] [P] Update ChatQuery model in backend/src/models/rag_models.py (add chapter_id field)
-- [ ] T031 [US3] [P] Update retrieval_service.py to support chapter_id parameter (chapters filter in Qdrant search)
-- [ ] T032 [US3] [P] Update rag_service.py to pass chapter context to OpenAI prompt
-- [ ] T033 [US3] [P] Update /api/query endpoint to support chapter_id parameter
-- [ ] T034 [US3] [P] Add chapter-aware prompts to openai_service.py
+- [x] T030 [US3] [P] Update ChatQuery model in backend/src/models/rag_models.py (add chapter_id field)
+- [x] T031 [US3] [P] Update retrieval_service.py to support chapter_id parameter (chapters filter in Qdrant search)
+- [x] T032 [US3] [P] Update rag_service.py to pass chapter context to OpenAI prompt
+- [x] T033 [US3] [P] Update /api/query endpoint to support chapter_id parameter
+- [x] T034 [US3] [P] Add chapter-aware prompts to openai_service.py
 
 **Checkpoint**: At this point, User Story 3 should be fully functional. Queries within a chapter context return chapter-prioritized answers.
 
