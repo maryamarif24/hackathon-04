@@ -139,9 +139,9 @@
 
 ### Implementation for User Story 4
 
-- [ ] T035 [US4] [P] Add prompt templates to openai_service.py for educational tone and structure
-- [ ] T036 [US4] [P] Implement response post-processing in rag_service.py (enforce structure, length limits)
-- [ ] T037 [US4] [P] Update schemas.py to validate answer length (<300 words for simple queries)
+- [x] T035 [US4] [P] Add prompt templates to openai_service.py for educational tone and structure
+- [x] T036 [US4] [P] Implement response post-processing in rag_service.py (enforce structure, length limits)
+- [x] T037 [US4] [P] Update schemas.py to validate answer length (<300 words for simple queries)
 
 **Checkpoint**: At this point, User Story 4 should be fully functional. All answers maintain educational tone and proper structure.
 

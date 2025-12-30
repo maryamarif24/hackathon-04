@@ -1,6 +1,6 @@
 // Advanced AI-Powered Chatbot API for Physical AI Textbook
 // Intelligent, context-aware responses with comprehensive topic coverage
-// Supports both general questions and context-specific queries based on selected text
+// Supports general questions, context-specific queries, chapter-aware prioritization, and educational explanations
 
 export default function handler(req, res) {
   try {
@@ -105,10 +105,16 @@ export default function handler(req, res) {
         contextResponse = generateContextAwareResponse(contextText, userQuestion);
       }
 
+      // Apply educational formatting
+      contextResponse = applyEducationalFormatting(contextResponse, userQuestion);
+      const eduMetadata = getEducationalMetadata(userQuestion);
+
       return res.status(200).json({
         answer: contextResponse,
         sources: [{chunk_id: 'context-based', chapter_id: 0, section_id: 'context', section_title: 'Selected Text Context', preview_text: contextText.substring(0, 100) + '...', relevance_score: 0.99}],
-        query_time_ms: 38.2
+        chapter_id: chapter_id,
+        query_time_ms: 38.2,
+        educational_metadata: eduMetadata
       });
     }
 
@@ -143,11 +149,16 @@ export default function handler(req, res) {
         answer = `*[Chapter ${chapter_id} Context]*\n\n${answer}`;
       }
 
+      // Apply educational formatting
+      answer = applyEducationalFormatting(answer, userQuestion);
+      const eduMetadata = getEducationalMetadata(userQuestion);
+
       return res.status(200).json({
         answer: answer,
         sources: bestMatch.sources,
         chapter_id: chapter_id,
-        query_time_ms: 42.5
+        query_time_ms: 42.5,
+        educational_metadata: eduMetadata
       });
     }
 
@@ -158,11 +169,16 @@ export default function handler(req, res) {
       fallbackAnswer = `*[Chapter ${chapter_id} Context]*\n\n${fallbackAnswer}`;
     }
 
+    // Apply educational formatting
+    fallbackAnswer = applyEducationalFormatting(fallbackAnswer, userQuestion);
+    const eduMetadata = getEducationalMetadata(userQuestion);
+
     return res.status(200).json({
       answer: fallbackAnswer,
       sources: [],
       chapter_id: chapter_id,
-      query_time_ms: 35.8
+      query_time_ms: 35.8,
+      educational_metadata: eduMetadata
     });
   } catch (error) {
     console.error('API Error:', error);
@@ -265,4 +281,108 @@ function generateContextOnlyResponse(contextText, question) {
 
   // Default response for context-only queries
   return `Based only on the selected text: "${contextText}"\n\nI'm answering your question based solely on the content you selected. The information provided comes exclusively from the selected text, and I'm not using any external knowledge beyond what's in your selected text.\n\nIf the selected text doesn't contain the information needed to answer your question, I cannot provide a complete answer based only on that text.`;
+}
+
+// ============================================
+// US4: Educational Explanations Utilities
+// ============================================
+
+// Post-process response for educational tone and structure
+function applyEducationalFormatting(answer, question) {
+  let formatted = answer;
+
+  // Detect if this is a simple question (short question = likely short answer needed)
+  const isSimpleQuestion = question.length < 50;
+
+  // Apply educational tone transformations
+  formatted = ensureEducationalTone(formatted);
+
+  // Enforce structure: ensure lists use consistent formatting
+  formatted = standardizeListFormat(formatted);
+
+  // Enforce length limits for simple questions
+  if (isSimpleQuestion) {
+    formatted = enforceWordLimit(formatted, 300);
+  }
+
+  return formatted;
+}
+
+// Ensure response uses educational, learner-friendly tone
+function ensureEducationalTone(text) {
+  let result = text;
+
+  // Replace overly casual language with educational alternatives
+  const toneReplacements = [
+    { pattern: /\bcool\b/gi, replacement: 'interesting' },
+    { pattern: /\bawesome\b/gi, replacement: 'remarkable' },
+    { pattern: /\breally\b/gi, replacement: 'significantly' },
+    { pattern: /\bsuper\b/gi, replacement: 'highly' },
+    { pattern: /\bkind of\b/gi, replacement: 'somewhat' },
+    { pattern: /\bsort of\b/gi, replacement: 'somewhat' },
+  ];
+
+  toneReplacements.forEach(({ pattern, replacement }) => {
+    result = result.replace(pattern, replacement);
+  });
+
+  // Ensure first sentence is welcoming/educational
+  if (!result.toLowerCase().includes('here') && !result.toLowerCase().startsWith('let')) {
+    // Add educational prefix for definition-style answers
+    if (result.startsWith('**')) {
+      const titleMatch = result.match(/^\*\*(.+?)\*\*/);
+      if (titleMatch) {
+        const title = titleMatch[1];
+        result = result.replace(/^\*\*.+?\*\*/, `**${title}**\n\nThis concept is fundamental to understanding Physical AI and robotics.`);
+      }
+    }
+  }
+
+  return result;
+}
+
+// Standardize list formatting for consistency
+function standardizeListFormat(text) {
+  let result = text;
+
+  // Convert numbered lists that aren't using proper markdown
+  result = result.replace(/^(\d+)\.\s*([A-Z])/gm, '$1. **$2');
+
+  // Ensure bullet points have proper spacing
+  result = result.replace(/^[-*]\s*([A-Z])/gm, '- **$1');
+
+  // Add spacing after section headers if missing
+  result = result.replace(/^(#{1,6}\s+.+)$/gm, '$1\n');
+
+  return result;
+}
+
+// Enforce word limit for simple questions
+function enforceWordLimit(text, limit) {
+  const words = text.split(/\s+/);
+  if (words.length > limit) {
+    // Truncate at last complete sentence before limit
+    const truncated = words.slice(0, limit).join(' ');
+    const lastPeriod = truncated.lastIndexOf('.');
+    if (lastPeriod > limit * 0.7) {
+      return truncated.substring(0, lastPeriod + 1) + '\n\n*[Response truncated for brevity. Ask for more details if needed.]*';
+    }
+    return truncated + '...';
+  }
+  return text;
+}
+
+// Get educational metadata for response
+function getEducationalMetadata(question) {
+  const q = question.toLowerCase();
+  const isSimple = question.length < 50;
+  const isDefinition = q.startsWith('what is') || q.startsWith('what are') || q.startsWith('define');
+  const isExplanation = q.includes('explain') || q.includes('how does') || q.includes('why');
+
+  return {
+    questionType: isDefinition ? 'definition' : isExplanation ? 'explanation' : 'general',
+    complexity: isSimple ? 'simple' : 'moderate' | 'complex',
+    estimatedWordCount: isSimple ? '< 300' : '300-500',
+    needsStructure: !isSimple,
+  };
 }
