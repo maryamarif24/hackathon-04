@@ -151,12 +151,12 @@
 
 **Purpose**: Improvements that affect multiple user stories and system readiness.
 
-- [ ] T038 [P] Documentation updates in backend/README.md
-- [ ] T039 [P] Code cleanup and refactoring for readability
-- [ ] T040 [P] Performance optimization (embeddings caching, vector search tuning)
-- [ ] T041 [P] Additional unit tests (if time permits)
-- [ ] T042 [P] Security hardening (input sanitization, output encoding)
-- [ ] T043 [P] Run quickstart.md validation tasks
+- [x] T038 [P] Documentation updates in backend/README.md
+- [x] T039 [P] Code cleanup and refactoring for readability
+- [x] T040 [P] Performance optimization (embeddings caching, vector search tuning)
+- [x] T041 [P] Additional unit tests (if time permits)
+- [x] T042 [P] Security hardening (input sanitization, output encoding)
+- [x] T043 [P] Run quickstart.md validation tasks
 
 ---
 

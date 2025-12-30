@@ -1,6 +1,51 @@
 // Advanced AI-Powered Chatbot API for Physical AI Textbook
 // Intelligent, context-aware responses with comprehensive topic coverage
 // Supports general questions, context-specific queries, chapter-aware prioritization, and educational explanations
+//
+// Security: Input sanitization, output encoding, rate limiting ready
+// Educational: Tone enforcement, structure validation, word limits
+
+/**
+ * Sanitize user input to prevent XSS and injection attacks
+ * @param {string} input - Raw user input
+ * @param {number} maxLength - Maximum allowed length (default: 1000)
+ * @returns {string} - Sanitized input
+ */
+function sanitizeInput(input, maxLength = 1000) {
+  if (typeof input !== 'string') {
+    return '';
+  }
+  // Trim and limit length
+  let sanitized = input.trim().substring(0, maxLength);
+  // Remove potential XSS patterns
+  sanitized = sanitized
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+    .replace(/javascript:/gi, '')
+    .replace(/on\w+=/gi, '')
+    .replace(/<iframe/gi, '[iframe blocked]')
+    .replace(/<object/gi, '[object blocked]')
+    .replace(/<embed/gi, '[embed blocked]');
+  return sanitized;
+}
+
+/**
+ * Escape markdown special characters for safe display
+ * @param {string} text - Text to escape
+ * @returns {string} - Escaped text
+ */
+function escapeForMarkdown(text) {
+  if (typeof text !== 'string') {
+    return '';
+  }
+  return text
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/`/g, '\\`')
+    .replace(/\*/g, '\\*')
+    .replace(/_/g, '\\_')
+    .replace(/\[/g, '\\[')
+    .replace(/\]/g, '\\]');
+}
 
 export default function handler(req, res) {
   try {
@@ -17,7 +62,13 @@ export default function handler(req, res) {
       return res.status(405).json({ error: 'Method not allowed' });
     }
 
-    const { question, context, use_context_only = false, chapter_id = null } = req.body || {};
+    // Sanitize all user inputs
+    const rawQuestion = req.body?.question || '';
+    const rawContext = req.body?.context || '';
+
+    const question = sanitizeInput(rawQuestion, 1000);
+    const context = sanitizeInput(rawContext, 5000);
+
     if (!question) {
       return res.status(400).json({ error: 'Question is required' });
     }
