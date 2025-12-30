@@ -1,0 +1,225 @@
+openapi: 3.0.0
+info:
+  title: Physical AI Textbook RAG Chatbot API
+  version: 1.0.0
+  description: API for querying Physical AI & Humanoid Robotics textbook using RAG (Retrieval-Augmented Generation)
+  contact:
+    name: RAG Chatbot Team
+    email: team@physical-ai.com
+
+servers:
+  - url: http://localhost:8000
+    description: Local development server
+
+paths:
+  /health:
+    get:
+      summary: Health check endpoint
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: healthy
+                  version:
+                    type: string
+                    example: '1.0.0'
+        '503':
+          description: Service unavailable (e.g., database connection failure)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/query:
+    post:
+      summary: Query RAG chatbot for textbook content
+      operationId: queryRAGChatbot
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatQuery'
+      responses:
+        '200':
+          description: Successful query with textbook-grounded answer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatResponse'
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Service unavailable (database connection failure, embedding service down)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    ChatQuery:
+      type: object
+      required:
+        - question
+      properties:
+        question:
+          type: string
+          minLength: 3
+          maxLength: 500
+          description: User's natural language question about Physical AI & Humanoid Robotics textbook
+          example: "What are the key components of a humanoid robot?"
+        context:
+          type: string
+          description: Selected text passage from textbook (for selected-text-only mode). Ignored unless use_context_only is true.
+          example: "Actuators convert electrical energy into mechanical motion."
+        use_context_only:
+          type: boolean
+          default: false
+          description: When true, answers use ONLY the provided context text
+        top_k:
+          type: integer
+          minimum: 1
+          maximum: 20
+          default: 5
+          description: Number of relevant textbook chunks to retrieve
+        chapter_id:
+          type: integer
+          minimum: 1
+          maximum: 6
+          description: Current chapter context (for chapter-aware mode)
+
+    RetrievedChunk:
+      type: object
+      required:
+        - chunk_id
+        - chapter_id
+        - section_id
+        - section_title
+        - preview_text
+        - relevance_score
+      properties:
+        chunk_id:
+          type: string
+          description: Unique identifier for the content chunk
+          example: "ch2_sec3_actuators_001"
+        chapter_id:
+          type: integer
+          description: Chapter number that this chunk belongs to
+          example: 2
+        section_id:
+          type: string
+          description: Section identifier within the chapter
+          example: "3_actuators"
+        section_title:
+          type: string
+          description: Human-readable title of the section
+          example: "Actuators and Motion"
+        preview_text:
+          type: string
+          maxLength: 200
+          description: First 200 characters of chunk content for display in UI
+          example: "Actuators are the muscles of a humanoid robot, converting electrical energy..."
+        relevance_score:
+          type: number
+          format: float
+          minimum: 0.0
+          maximum: 1.0
+          description: Semantic similarity score from vector search (higher = more relevant)
+          example: 0.87
+
+    ChatResponse:
+      type: object
+      required:
+        - answer
+        - sources
+      properties:
+        answer:
+          type: string
+          minLength: 10
+          maxLength: 5000
+          description: Generated explanation in educational tone
+          example: "Humanoid robots typically use electric or hydraulic actuators to create motion."
+        sources:
+          type: array
+          minItems: 0
+          maxItems: 10
+          items:
+            $ref: '#/components/schemas/RetrievedChunk'
+          description: Relevant textbook chunks used to generate the answer
+        query_time_ms:
+          type: integer
+          minimum: 0
+          description: Time taken to process the query in milliseconds (for monitoring)
+          example: 1250
+        mode:
+          type: string
+          enum:
+            - book-wide
+            - selected-text-only
+            - chapter-aware
+          description: Answering mode used for this response
+          example: "book-wide"
+        error:
+          $ref: '#/components/schemas/ErrorDetail'
+          description: Present only on failure
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: object
+          required:
+            - type
+            - message
+          properties:
+            type:
+              type: string
+              enum:
+                - validation_error
+                - service_unavailable
+                - rate_limit_exceeded
+              description: Type of error that occurred
+            message:
+              type: string
+              description: User-friendly error message
+              example: "Textbook content is not available. Please contact administrator."
+
+    ErrorDetail:
+      type: object
+      required:
+        - type
+        - message
+      properties:
+        type:
+          type: string
+        message:
+          type: string
+
+tags:
+  - name: RAG Chatbot
+  - description: Endpoints for RAG-based question answering
+
+security:
+  - {}
+    # No authentication required for current MVP
+    # Rate limiting: 10 requests per minute per IP

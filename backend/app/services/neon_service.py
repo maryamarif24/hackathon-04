@@ -220,6 +220,45 @@ class NeonService:
             if conn:
                 self.release_connection(conn)
 
+    def get_chunks_by_chapter(self, chapter_id: int) -> List[dict]:
+        """
+        Retrieve all chunks for a specific chapter.
+
+        Args:
+            chapter_id: Chapter number (1-6)
+
+        Returns:
+            List of dicts with chunk metadata
+        """
+        conn = None
+        try:
+            conn = self.get_connection()
+            cursor = conn.cursor(cursor_factory=RealDictCursor)
+
+            cursor.execute(
+                """
+                SELECT chunk_id, chapter_id, section_id, section_title,
+                       chunk_index, token_count, char_count, preview_text, indexed_at
+                FROM chunk_metadata
+                WHERE chapter_id = %s
+                ORDER BY chunk_index;
+                """,
+                (chapter_id,)
+            )
+
+            results = cursor.fetchall()
+            cursor.close()
+
+            return [dict(row) for row in results]
+
+        except Exception as e:
+            logger.error(f"Failed to get chunks by chapter {chapter_id}: {e}")
+            return []
+
+        finally:
+            if conn:
+                self.release_connection(conn)
+
     def health_check(self) -> bool:
         """
         Check if database is reachable.

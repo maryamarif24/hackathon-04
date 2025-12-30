@@ -11,9 +11,10 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
 from app.config import settings
-from app.api.health import router as health_router
-from app.api.query import router as query_router
-from app.services.embedding_service import embedding_service
+from src.api.health import router as health_router
+from src.api.query import router as query_router
+from app.api.book_content import router as book_content_router
+from src.services import embedding_service
 
 # Configure logging
 logging.basicConfig(
@@ -34,9 +35,9 @@ async def lifespan(app: FastAPI):
     Loads embedding model on startup.
     """
     # Startup
-    logger.info("🚀 Starting Physical AI Textbook API...")
+    logger.info("🚀 Starting Physical AI Textbook RAG API...")
     logger.info(f"Environment: {settings.log_level}")
-    logger.info(f"CORS Origins: {settings.cors_origins}")
+    logger.info(f"CORS Origins: {settings.cors_origins_list}")
 
     # Load embedding model
     logger.info("Loading embedding model...")
@@ -55,7 +56,7 @@ async def lifespan(app: FastAPI):
 # Create FastAPI application
 app = FastAPI(
     title="Physical AI & Humanoid Robotics Textbook API",
-    description="RAG-powered chatbot API for querying textbook content",
+    description="API for querying textbook content using RAG",
     version="1.0.0",
     lifespan=lifespan
 )
@@ -67,7 +68,7 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins,
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["GET", "POST"],
     allow_headers=["*"],
@@ -76,6 +77,7 @@ app.add_middleware(
 # Register routes
 app.include_router(health_router, prefix="", tags=["Health"])
 app.include_router(query_router, prefix="", tags=["Query"])
+app.include_router(book_content_router, prefix="", tags=["Book Content"])
 
 # Root endpoint
 @app.get("/", tags=["Root"])

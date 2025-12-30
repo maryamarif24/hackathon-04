@@ -9,23 +9,35 @@ from typing import List
 class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
 
-    # Qdrant Configuration
+    # OpenAI API Configuration
+    openai_api_key: str
+    openai_model: str = "gpt-4o-mini"
+
+    # Qdrant Cloud Configuration
     qdrant_url: str
     qdrant_api_key: str
+    qdrant_collection_name: str = "physical-ai-textbook"
 
-    # Neon PostgreSQL Configuration
-    database_url: str
+    # Neon Postgres Configuration
+    neon_connection_string: str
+    neon_database_name: str = "neondb"
 
-    # Embedding Model Configuration
-    transformers_cache: str = "./models_cache"
-    model_name: str = "sentence-transformers/all-MiniLM-L6-v2"
-
-    # API Configuration
-    allowed_origins: str = "http://localhost:3000"
-    rate_limit_per_minute: int = 10
-
-    # Logging
+    # Application Settings
     log_level: str = "INFO"
+    cors_origins: str = "http://localhost:3000,https://your-website.vercel.app"
+    rate_limit_requests_per_minute: int = 10
+
+    # Embedding Configuration
+    embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
+    embedding_dim: int = 384
+
+    # Retrieval Configuration
+    top_k_default: int = 5
+    min_relevance_score: float = 0.7
+
+    # OpenAI Generation Configuration
+    openai_temperature: float = 0.3
+    openai_max_tokens: int = 800
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -35,9 +47,9 @@ class Settings(BaseSettings):
     )
 
     @property
-    def cors_origins(self) -> List[str]:
-        """Parse comma-separated ALLOWED_ORIGINS into list."""
-        return [origin.strip() for origin in self.allowed_origins.split(",")]
+    def cors_origins_list(self) -> List[str]:
+        """Parse comma-separated CORS_ORIGINS into list."""
+        return [origin.strip() for origin in self.cors_origins.split(",")]
 
 
 # Global settings instance
