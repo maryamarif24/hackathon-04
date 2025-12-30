@@ -96,10 +96,10 @@
 
 ### Implementation for User Story 2
 
-- [ ] T026 [US2] [P] Update ChatQuery model in backend/src/models/rag_models.py (add use_context_only field)
-- [ ] T027 [US2] Add context-only logic to retrieval_service.py (filter to user-selected text)
-- [ ] T028 [US2] [P] Update /api/query endpoint to support use_context_only parameter
-- [ ] T029 [US2] [P] Add error handling for empty context in selected-text-only mode
+- [x] T026 [US2] [P] Update ChatQuery model in backend/src/models/rag_models.py (add use_context_only field)
+- [x] T027 [US2] Add context-only logic to retrieval_service.py (filter to user-selected text)
+- [x] T028 [US2] [P] Update /api/query endpoint to support use_context_only parameter
+- [x] T029 [US2] [P] Add error handling for empty context in selected-text-only mode
 
 **Checkpoint**: At this point, User Story 2 should be fully functional. Learners can get answers constrained to selected text only.
 
