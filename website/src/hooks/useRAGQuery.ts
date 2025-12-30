@@ -33,10 +33,27 @@ interface UseRAGQueryReturn {
   clear: () => void;
 }
 
-// API endpoint - uses localhost for development, /api for production
-const API_URL = process.env.NODE_ENV === 'development'
-  ? 'http://localhost:8001/api/query'
-  : '/api/query';
+// API endpoint configuration
+// - Development: localhost:8001 (for local testing)
+// - Production: VERCEL_URL or fallback to /api/query (Vercel serverless)
+// - Or use VITE_RAG_API_URL for Hugging Face Space
+const getApiUrl = () => {
+  // If custom API URL is set (e.g., Hugging Face Space)
+  const customUrl = process.env.VITE_RAG_API_URL || process.env.REACT_APP_RAG_API_URL;
+  if (customUrl) {
+    return customUrl;
+  }
+
+  // Development: local backend
+  if (process.env.NODE_ENV === 'development') {
+    return 'http://localhost:8001/api/query';
+  }
+
+  // Production: use /api/query (Vercel) or external API
+  return process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}/api/query` : '/api/query';
+};
+
+const API_URL = getApiUrl();
 
 export function useRAGQuery(): UseRAGQueryReturn {
   const [loading, setLoading] = useState(false);
