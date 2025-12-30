@@ -5,8 +5,8 @@
   "installCommand": "cd website && npm install",
   "rewrites": [
     {
-      "source": "/api/:path*",
-      "destination": "/api/:path*"
+      "source": "/api/query",
+      "destination": "/api/query.js"
     }
   ]
 }
