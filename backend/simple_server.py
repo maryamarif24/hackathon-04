@@ -5,22 +5,25 @@ This provides mock responses so you can test the chatbot UI.
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import List
-import re
+from typing import List, Optional
+import uvicorn
 
 app = FastAPI(title="Physical AI Textbook API (Mock)")
 
 # Enable CORS - allow all origins for deployment
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins (change to specific domain in production)
-    allow_credentials=False,  # Set to False when using wildcard origins
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 class QueryRequest(BaseModel):
     question: str
+    context: str = ""
+    use_context_only: bool = False
+    chapter_id: Optional[int] = None
     top_k: int = 5
 
 class SourceCitation(BaseModel):
@@ -31,10 +34,18 @@ class SourceCitation(BaseModel):
     preview_text: str
     relevance_score: float
 
+class EducationalMetadata(BaseModel):
+    questionType: str = "general"
+    complexity: str = "simple"
+    estimatedWordCount: str = "300-500"
+    needsStructure: bool = True
+
 class QueryResponse(BaseModel):
     answer: str
     sources: List[SourceCitation]
+    chapter_id: Optional[int] = None
     query_time_ms: float
+    educational_metadata: Optional[EducationalMetadata] = None
 
 @app.get("/")
 async def root():
@@ -52,27 +63,15 @@ async def health():
 
 @app.post("/api/query", response_model=QueryResponse)
 async def query(request: QueryRequest):
-    """
-    Mock query endpoint that returns sample responses.
-    Supports both general questions and context-specific queries based on selected text.
-    """
-    # Check if this is a context-specific query (contains "Context:" marker)
+    """Mock query endpoint that returns sample responses."""
     question_text = request.question
-    context_text = ""
-
-    if "Context:" in question_text:
-        parts = question_text.split('\n\nQuestion:')
-        if len(parts) >= 2:
-            # Extract context from "Context: actual_context_text"
-            context_match = re.search(r'Context:\s*(.*)', parts[0])
-            if context_match:
-                context_text = context_match.group(1).strip()
-            question_text = parts[1].strip()
+    context_text = request.context or ""
+    use_context_only = request.use_context_only
+    chapter_id = request.chapter_id
 
     # If there's context text, provide a response based on the context
     if context_text:
-        # Analyze the context and question to provide a relevant response
-        answer = generate_context_aware_response(context_text, question_text)
+        answer = generate_context_aware_response(context_text, question_text, use_context_only)
         sources = [
             SourceCitation(
                 chunk_id="context-based",
@@ -88,13 +87,25 @@ async def query(request: QueryRequest):
         question_lower = question_text.lower()
 
         if "physical ai" in question_lower or "what is" in question_lower:
-            answer = """Physical AI refers to artificial intelligence systems that interact directly with the physical world through robotic platforms. Unlike traditional AI that operates purely in software, Physical AI combines:
+            answer = """**Physical AI** represents the convergence of artificial intelligence with physical robotics, enabling machines to perceive, reason about, and interact with the real world.
 
-    - **Perception**: Using sensors like cameras, LiDAR, and force sensors to understand the environment
-    - **Cognition**: AI models that process sensor data and make decisions in real-time
-    - **Action**: Actuators and motors that execute physical tasks
+### Core Principles:
+1. **Perception**: Multi-sensor fusion (cameras, LiDAR, tactile, IMUs) for environmental understanding
+2. **Cognition**: Real-time AI models for decision-making and planning
+3. **Action**: Precise actuation through motors, servos, and end-effectors
 
-    Physical AI is critical for humanoid robots, autonomous vehicles, and industrial automation systems."""
+### Key Differences from Traditional AI:
+- **Traditional AI**: Operates in virtual environments (software, simulations)
+- **Physical AI**: Must handle real-world uncertainties, physics, and safety constraints
+
+### Applications:
+- Humanoid robots (Tesla Optimus, Boston Dynamics Atlas)
+- Autonomous vehicles
+- Industrial automation
+- Surgical robots
+- Warehouse automation (Amazon Robotics)
+
+Physical AI is revolutionizing how machines interact with our physical world!"""
             sources = [
                 SourceCitation(
                     chunk_id="ch1-intro-001",
@@ -102,19 +113,34 @@ async def query(request: QueryRequest):
                     section_id="1.1",
                     section_title="Introduction to Physical AI",
                     preview_text="Physical AI represents a paradigm shift in artificial intelligence...",
-                    relevance_score=0.95
+                    relevance_score=0.98
                 )
             ]
 
         elif "ros" in question_lower or "robot operating system" in question_lower:
-            answer = """ROS 2 (Robot Operating System 2) is the industry-standard framework for robot software development. It provides:
+            answer = """**ROS 2 (Robot Operating System 2)** is the industry-standard middleware for building robot applications.
 
-    - **Communication Infrastructure**: Nodes, topics, and services for inter-process communication
-    - **Hardware Abstraction**: Standardized interfaces for sensors and actuators
-    - **Tools and Libraries**: Visualization (RViz), simulation (Gazebo), and debugging tools
-    - **Distributed Computing**: Supports multi-robot and cloud-connected systems
+### Architecture:
+- **DDS (Data Distribution Service)**: Real-time pub-sub middleware
+- **Quality of Service (QoS)**: Configurable reliability, durability, latency
+- **Security**: DDS-Security standard, encrypted communication
 
-    ROS 2 improves upon ROS 1 with real-time capabilities, better security, and multi-platform support."""
+### Communication Patterns:
+1. **Topics** (Pub/Sub): Best for sensor data, continuous streams
+2. **Services** (Request/Response): Best for discrete actions, configuration
+3. **Actions** (Goal-based): Best for long-running tasks with feedback
+
+### Essential Tools:
+- **RViz2**: 3D visualization of robots and sensor data
+- **Gazebo**: Physics simulation
+- **Nav2**: Autonomous navigation stack
+- **MoveIt 2**: Motion planning for manipulators
+
+### Why ROS 2 > ROS 1:
+- Real-time performance
+- Multi-robot support
+- Better security
+- Production-ready (automotive, industrial)"""
             sources = [
                 SourceCitation(
                     chunk_id="ch3-ros-001",
@@ -122,38 +148,68 @@ async def query(request: QueryRequest):
                     section_id="3.1",
                     section_title="ROS 2 Architecture",
                     preview_text="ROS 2 is built on a distributed middleware called DDS...",
-                    relevance_score=0.92
+                    relevance_score=0.97
                 )
             ]
 
         elif "humanoid" in question_lower or "robot" in question_lower:
-            answer = """Humanoid robotics involves designing robots with human-like form and capabilities. Key components include:
+            answer = """**Humanoid Robotics** focuses on creating robots with human-like form and capabilities.
 
-    - **Mechanical Design**: Joints, actuators, and structural elements that mimic human anatomy
-    - **Sensors**: Vision systems, tactile sensors, IMUs for balance and perception
-    - **Control Systems**: Real-time control loops for walking, manipulation, and interaction
-    - **AI Integration**: Vision-language-action models for understanding and responding to commands
+### Mechanical Design:
+- **Degrees of Freedom (DOF)**: Modern humanoids have 30+ joints
+- **Actuators**: Electric motors, hydraulic systems, or series elastic actuators (SEA)
+- **Materials**: Carbon fiber, aluminum alloys for strength-to-weight ratio
 
-    Modern humanoid robots like Tesla Optimus and Boston Dynamics Atlas demonstrate advanced mobility and dexterity."""
+### Key Components:
+1. **Locomotion System**: Zero Moment Point (ZMP) control for balance
+2. **Manipulation**: Dexterous hands with 20+ DOF, force/torque sensors
+3. **Sensory Systems**: Vision, proprioception, tactile sensors
+
+### Modern Examples:
+- **Tesla Optimus**: 28 DOF, designed for manufacturing
+- **Boston Dynamics Atlas**: Parkour, backflips, 360 vision
+- **Figure 01**: Commercial applications, OpenAI integration"""
             sources = [
                 SourceCitation(
-                    chunk_id="ch2-humanoid-001",
+                    chunk_id="ch2-hum-001",
                     chapter_id=2,
                     section_id="2.1",
-                    section_title="Basics of Humanoid Robotics",
-                    preview_text="Humanoid robots are designed to replicate human form and function...",
-                    relevance_score=0.89
+                    section_title="Humanoid Robotics Fundamentals",
+                    preview_text="Humanoid robots mimic human form and function...",
+                    relevance_score=0.96
                 )
             ]
 
         elif "vla" in question_lower or "vision-language-action" in question_lower:
-            answer = """Vision-Language-Action (VLA) systems are AI models that combine:
+            answer = """**Vision-Language-Action (VLA) Systems** unify perception, language understanding, and robot control.
 
-    - **Vision**: Processing camera inputs to understand scenes and objects
-    - **Language**: Understanding natural language commands and providing explanations
-    - **Action**: Generating robot control commands to manipulate objects
+### Architecture:
+Vision Input -> Vision Encoder (ViT)
+Text Input -> Language Model (T5, PaLM)
+    ↓
+Fusion Layer (Cross-attention)
+    ↓
+Policy Network (Transformer)
+    ↓
+Robot Actions (joint positions/velocities)
 
-    VLA models like RT-2 from Google DeepMind enable robots to understand instructions like "pick up the red cup" and execute the corresponding actions. These systems bridge the gap between human intent and robot execution."""
+### Key Models:
+1. **RT-2 (Robotic Transformer 2)** - Google DeepMind:
+   - Vision-Language-Action model
+   - Zero-shot generalization to new tasks
+
+2. **PaLM-E** - Google:
+   - 562B parameter embodied multimodal model
+   - Integrates sensor data with language
+
+3. **OpenVLA** - Open-source:
+   - 7B parameters, built on LLaMA and DinoV2
+
+### Capabilities:
+- Natural language commands
+- Multi-step planning
+- Generalization to novel objects
+- Reasoning about scenes"""
             sources = [
                 SourceCitation(
                     chunk_id="ch5-vla-001",
@@ -161,101 +217,136 @@ async def query(request: QueryRequest):
                     section_id="5.1",
                     section_title="Vision-Language-Action Systems",
                     preview_text="VLA systems represent the convergence of computer vision, NLP, and robotics...",
+                    relevance_score=0.98
+                )
+            ]
+
+        elif "sensor" in question_lower:
+            answer = """**Robot Sensors** enable environmental perception and state estimation.
+
+### Vision Sensors:
+- **RGB Cameras**: Color images, object detection
+- **Depth Cameras**: Intel RealSense, Azure Kinect (structured light/ToF)
+- **Stereo Cameras**: ZED, OAK-D (depth from disparity)
+
+### Range Sensors:
+- **2D LiDAR**: SICK, Hokuyo (planar scanning)
+- **3D LiDAR**: Velodyne, Ouster (360 point clouds)
+- **Ultrasonic**: Short-range obstacle detection
+
+### Inertial/Proprioceptive:
+- **IMU**: 6-DOF (accel + gyro) or 9-DOF (+ magnetometer)
+- **Joint Encoders**: Absolute or incremental position
+- **Force/Torque Sensors**: 6-axis force/torque sensing
+
+### Sensor Fusion:
+- Extended Kalman Filter (EKF)
+- Particle Filters
+- Graph-based SLAM"""
+            sources = [
+                SourceCitation(
+                    chunk_id="ch2-sen-001",
+                    chapter_id=2,
+                    section_id="2.2",
+                    section_title="Robot Sensors",
+                    preview_text="Sensors provide robots with perception of their environment...",
                     relevance_score=0.94
                 )
             ]
 
         else:
-            # Generic response
-            answer = f"""I can help you understand concepts from the Physical AI and Humanoid Robotics textbook!
+            answer = """I can help you learn about **Physical AI & Humanoid Robotics**!
 
-    Your question: "{question_text}"
+### Available Topics:
 
-    This textbook covers:
-    - Chapter 1: Introduction to Physical AI
-    - Chapter 2: Basics of Humanoid Robotics
-    - Chapter 3: ROS 2 Fundamentals
-    - Chapter 4: Digital Twin Simulation
-    - Chapter 5: Vision-Language-Action Systems
-    - Chapter 6: Capstone Project
+**Chapter 1: Physical AI**
+- What is Physical AI?
+- Applications and use cases
+- Core components
 
-    Try asking about specific topics like "What is Physical AI?", "How does ROS 2 work?", or "Explain VLA systems"."""
+**Chapter 2: Humanoid Robotics**
+- Mechanical design, sensors, actuators
+- Modern examples (Tesla Optimus, Atlas)
+
+**Chapter 3: ROS 2**
+- Architecture and communication
+- Tools (RViz, Gazebo, MoveIt)
+
+**Chapter 4: Simulation**
+- Gazebo and Isaac Sim
+- Digital twins, sim-to-real transfer
+
+**Chapter 5: VLA Systems**
+- RT-2, PaLM-E, OpenVLA
+- Natural language control
+
+### Try asking:
+- What is Physical AI?
+- Tell me about humanoid robots
+- How does ROS 2 work?
+- Explain VLA systems
+- What sensors do robots use?"""
             sources = []
+
+    # Determine educational metadata based on question
+    is_simple = len(question_text) < 50
+    is_definition = question_text.lower().startswith('what is') or question_text.lower().startswith('what are')
+    edu_metadata = EducationalMetadata(
+        questionType='definition' if is_definition else 'explanation',
+        complexity='simple' if is_simple else 'moderate',
+        estimatedWordCount='< 300' if is_simple else '300-500',
+        needsStructure=not is_simple
+    )
 
     return QueryResponse(
         answer=answer,
         sources=sources,
-        query_time_ms=45.2
+        chapter_id=chapter_id,
+        query_time_ms=42.5,
+        educational_metadata=edu_metadata
     )
 
 
-# Helper function to generate context-aware responses
-def generate_context_aware_response(context_text: str, question: str) -> str:
-    # Analyze the context and question to provide a relevant response
-    context_lower = context_text.lower()
+def generate_context_aware_response(context_text: str, question: str, use_context_only: bool = False) -> str:
+    """Generate response based on selected text context."""
     question_lower = question.lower()
+    prefix = "Based only on the selected text" if use_context_only else "Based on the selected text"
 
-    # Check if the question is asking for explanation of the selected text
+    # Check if the question is asking for explanation
     if any(keyword in question_lower for keyword in ['explain', 'what does', 'mean', 'describe']):
-        return f"""Based on the selected text: "{context_text}"
+        return f"""{prefix}: "{context_text}"
 
-This text discusses important concepts in Physical AI and robotics. The selected portion covers key aspects of the topic and provides foundational knowledge. For a more comprehensive understanding, I recommend referring to the relevant sections in the textbook."""
+This text discusses important concepts in Physical AI and robotics. The selected portion covers key aspects of the topic. Any answer I provide is {'constrained to' if use_context_only else 'enhanced by'} the information provided."""
 
-    # Check if the question is asking for more details about something in the context
+    # Check if the question is asking for more details
     if any(keyword in question_lower for keyword in ['more', 'details', 'elaborate', 'further']):
-        return f"""The selected text "{context_text}" highlights important concepts in Physical AI and robotics. To elaborate further on this topic:
+        return f"""{prefix}: "{context_text}"
 
-{get_elaboration_for_context(context_text)}
+{get_elaboration_for_context(context_text) if not use_context_only else 'My answer is limited to what is contained in this specific text.'}"""
 
-This builds upon the foundational concepts mentioned in your selected text."""
+    return f"""{prefix}: "{context_text}"
 
-    # Default context-aware response
-    return f"""Based on the selected text: "{context_text}"
-
-Your question "{question}" relates to the concepts mentioned in the selected portion. The text provides context about the topic, and here's what I can tell you:
-
-{get_general_response_for_question(question)}
-
-For more detailed information, please refer to the specific sections in the textbook that contain the selected text."""
+{'I cannot provide information beyond what is in the selected text.' if use_context_only else 'I can also provide additional context from the textbook.'}"""
 
 
-# Helper function to get elaboration based on context
 def get_elaboration_for_context(context: str) -> str:
-    if any(keyword in context.lower() for keyword in ['physical ai', 'embodied ai']):
-        return "Physical AI, also known as Embodied AI, represents the integration of artificial intelligence with physical systems. This field focuses on creating AI systems that can interact with and operate in the physical world, combining perception, cognition, and action in real-time."
-    if any(keyword in context.lower() for keyword in ['ros', 'robot operating system']):
-        return "ROS (Robot Operating System) is a flexible framework for writing robot software. It's a collection of tools, libraries, and conventions that aim to simplify the task of creating complex and robust robot behavior across a wide variety of robotic platforms."
-    if any(keyword in context.lower() for keyword in ['humanoid', 'robot']):
-        return "Humanoid robots are robots with human-like form and capabilities. They typically feature a head, torso, two arms, and two legs, and may have human-like facial features and the ability to interact with human tools and environments."
-    if any(keyword in context.lower() for keyword in ['sensor', 'sensors']):
-        return "Sensors in robotics are critical components that enable robots to perceive their environment. Common sensors include cameras for vision, LiDAR for distance measurement, IMUs for orientation, and force/torque sensors for interaction with objects."
-    if any(keyword in context.lower() for keyword in ['control', 'controller']):
-        return "Robot control systems translate high-level commands into specific motor actions. This involves various control strategies like PID control for precise positioning, motion planning for path generation, and feedback control for error correction."
+    """Get elaboration based on context content."""
+    context_lower = context.lower()
+    if any(keyword in context_lower for keyword in ['physical ai', 'embodied ai']):
+        return "Physical AI, also known as Embodied AI, represents the integration of artificial intelligence with physical systems, combining perception, cognition, and action in real-time."
+    if any(keyword in context_lower for keyword in ['ros', 'robot operating system']):
+        return "ROS (Robot Operating System) is a flexible framework for writing robot software with tools, libraries, and conventions for creating complex robot behavior."
+    if any(keyword in context_lower for keyword in ['humanoid', 'robot']):
+        return "Humanoid robots are robots with human-like form and capabilities, featuring a head, torso, two arms, and two legs."
+    if any(keyword in context_lower for keyword in ['sensor', 'sensors']):
+        return "Sensors in robotics are critical components that enable robots to perceive their environment, including cameras, LiDAR, IMUs, and force/torque sensors."
+    if any(keyword in context_lower for keyword in ['control', 'controller']):
+        return "Robot control systems translate high-level commands into motor actions using PID control, motion planning, and feedback control."
+    return "This topic is fundamental to understanding Physical AI and robotics."
 
-    return "This topic is fundamental to understanding Physical AI and robotics. The concepts build upon each other to create intelligent systems that can interact with the physical world effectively."
-
-
-# Helper function to get general response for a question
-def get_general_response_for_question(question: str) -> str:
-    q = question.lower()
-
-    if 'physical ai' in q:
-        return "Physical AI refers to artificial intelligence systems that interact directly with the physical world through robotic platforms. Unlike traditional AI that operates purely in software, Physical AI combines perception, cognition, and action in real-time."
-    if any(keyword in q for keyword in ['ros', 'robot operating system']):
-        return "ROS (Robot Operating System) is the industry-standard framework for robot software development, providing communication infrastructure, hardware abstraction, and development tools."
-    if 'humanoid' in q:
-        return "Humanoid robotics involves creating robots with human-like form and capabilities, including mechanical design, sensors, control systems, and AI integration."
-    if 'sensor' in q:
-        return "Robot sensors enable environmental perception and state estimation, including vision systems, range sensors, and proprioceptive sensors."
-    if 'control' in q:
-        return "Robot control translates high-level goals into motor commands using various strategies like PID control, MPC, and motion planning algorithms."
-
-    return "This is an important topic in Physical AI and robotics. The textbook covers this in detail with practical examples and applications."
 
 if __name__ == "__main__":
-    import uvicorn
     print("Starting Mock Physical AI Textbook API...")
-    print("This server provides sample responses for testing the chatbot UI")
     print("API running at: http://localhost:8000")
     print("Docs available at: http://localhost:8000/docs")
     uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")

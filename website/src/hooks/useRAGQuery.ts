@@ -33,6 +33,11 @@ interface UseRAGQueryReturn {
   clear: () => void;
 }
 
+// API endpoint - uses localhost for development, /api for production
+const API_URL = process.env.NODE_ENV === 'development'
+  ? 'http://localhost:8001/api/query'
+  : '/api/query';
+
 export function useRAGQuery(): UseRAGQueryReturn {
   const [loading, setLoading] = useState(false);
   const [answer, setAnswer] = useState('');
@@ -51,7 +56,7 @@ export function useRAGQuery(): UseRAGQueryReturn {
     setError(null);
 
     try {
-      const response = await fetch('/api/query', {
+      const response = await fetch(API_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
