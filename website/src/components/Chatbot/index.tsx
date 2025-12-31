@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useRAGQuery } from '@site/src/hooks/useRAGQuery';
+import { useRAGQuery } from '../../hooks/useRAGQuery';
 import styles from './styles.module.css';
 
 export default function Chatbot(): React.JSX.Element {
