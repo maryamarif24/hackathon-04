@@ -65,9 +65,13 @@ export default function handler(req, res) {
     // Sanitize all user inputs
     const rawQuestion = req.body?.question || '';
     const rawContext = req.body?.context || '';
+    const rawUseContextOnly = req.body?.use_context_only || false;
+    const rawChapterId = req.body?.chapter_id || null;
 
     const question = sanitizeInput(rawQuestion, 1000);
     const context = sanitizeInput(rawContext, 5000);
+    const use_context_only = Boolean(rawUseContextOnly);
+    const chapter_id = rawChapterId ? Number(rawChapterId) : null;
 
     if (!question) {
       return res.status(400).json({ error: 'Question is required' });
