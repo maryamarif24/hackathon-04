@@ -123,6 +123,11 @@ Instructions:
 - Be helpful and thorough"""
 
         try:
+            # Validate API key is available
+            if not self.api_key:
+                logger.error("OpenRouter API key is not configured")
+                return self._get_fallback_response(question, context_text)
+
             # Call the OpenAI Chat Completions API
             response = self.client.chat.completions.create(
                 model=self.model,
@@ -140,6 +145,11 @@ Instructions:
 
         except Exception as e:
             logger.error(f"OpenRouter API call failed: {e}", exc_info=True)
+            # Log more specific details for debugging
+            logger.error(f"API Key configured: {bool(self.api_key)}")
+            logger.error(f"Model: {self.model}")
+            logger.error(f"Question length: {len(question)}")
+            logger.error(f"Context length: {len(context_text)}")
             # Return a helpful fallback response
             return self._get_fallback_response(question, context_text)
 
