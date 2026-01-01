@@ -43,13 +43,15 @@ class OpenRouterService:
         self.max_tokens = max_tokens
 
         if not self.api_key:
-            logger.warning("OPENROUTER_API_KEY environment variable not set")
-
-        # Configure OpenAI client for OpenRouter
-        self.client = OpenAI(
-            api_key=self.api_key,
-            base_url="https://openrouter.ai/api/v1",
-        )
+            logger.error("OPENROUTER_API_KEY environment variable not set")
+            # Create a client that will fail gracefully
+            self.client = None
+        else:
+            # Configure OpenAI client for OpenRouter
+            self.client = OpenAI(
+                api_key=self.api_key,
+                base_url="https://openrouter.ai/api/v1",
+            )
 
         logger.info(f"OpenRouterService initialized: model={model}, temp={temperature}")
         logger.info("Using OpenRouter with OpenAI Chat Completions API")
@@ -127,8 +129,8 @@ Instructions:
 
         try:
             # Validate API key is available
-            if not self.api_key:
-                logger.error("OpenRouter API key is not configured")
+            if not self.api_key or not self.client:
+                logger.error("OpenRouter API key is not configured or client not available")
                 return self._get_fallback_response(question, context_text)
 
             # Call the OpenAI Chat Completions API
@@ -150,6 +152,7 @@ Instructions:
             logger.error(f"OpenRouter API call failed: {e}", exc_info=True)
             # Log more specific details for debugging
             logger.error(f"API Key configured: {bool(self.api_key)}")
+            logger.error(f"Client available: {bool(self.client)}")
             logger.error(f"Model: {self.model}")
             logger.error(f"Question length: {len(question)}")
             logger.error(f"Context length: {len(context_text)}")
