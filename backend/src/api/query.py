@@ -78,7 +78,7 @@ async def query_textbook(request: Request, query: ChatQuery):
             )
 
         # Process query through RAG pipeline
-        answer, sources, query_time_ms = rag_service.process_query(
+        answer, sources, query_time_ms = await rag_service.process_query(
             question=query.question,
             context=query.context,
             use_context_only=query.use_context_only,

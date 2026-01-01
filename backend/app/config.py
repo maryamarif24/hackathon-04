@@ -3,15 +3,15 @@ Configuration management using pydantic-settings.
 Loads and validates environment variables from .env file.
 """
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from typing import List
+from typing import List, Optional
 
 
 class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
 
-    # OpenAI API Configuration
-    openai_api_key: str
-    openai_model: str = "gpt-4o-mini"
+    # OpenAI API Configuration (using OpenRouter)
+    openai_api_key: Optional[str] = None  # Optional, defaults to OPENROUTER_API_KEY environment variable
+    openai_model: str = "google/gemini-pro"  # Updated default for OpenRouter
 
     # Qdrant Cloud Configuration
     qdrant_url: str

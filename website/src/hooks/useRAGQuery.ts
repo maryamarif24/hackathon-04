@@ -34,26 +34,17 @@ interface UseRAGQueryReturn {
 }
 
 // API endpoint configuration
-// - Development: localhost:8001 (for local testing)
-// - Production: VERCEL_URL or fallback to /api/query (Vercel serverless)
-// - Or use VITE_RAG_API_URL for Hugging Face Space
+// - Local development: http://localhost:8000/api/query (external backend)
+// - Production: /api/query (Vercel serverless function)
 const getApiUrl = () => {
-  // If custom API URL is set (e.g., Hugging Face Space)
-  const customUrl = process.env.VITE_RAG_API_URL || process.env.REACT_APP_RAG_API_URL;
-  if (customUrl) {
-    return customUrl;
-  }
+  // For local development, use the external backend
+  // For production, use the Vercel API route
+  const isLocalhost = typeof window !== 'undefined'
+    ? (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    : false;
 
-  // Development: local backend
-  if (process.env.NODE_ENV === 'development') {
-    return 'http://localhost:8001/api/query';
-  }
-
-  // Production: use /api/query (Vercel) or external API
-  return process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}/api/query` : '/api/query';
+  return isLocalhost ? 'http://localhost:8000/query' : '/api/query';
 };
-
-const API_URL = getApiUrl();
 
 export function useRAGQuery(): UseRAGQueryReturn {
   const [loading, setLoading] = useState(false);
@@ -73,7 +64,8 @@ export function useRAGQuery(): UseRAGQueryReturn {
     setError(null);
 
     try {
-      const response = await fetch(API_URL, {
+      const apiUrl = getApiUrl();
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

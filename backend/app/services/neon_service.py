@@ -26,7 +26,7 @@ class NeonService:
             self.pool = SimpleConnectionPool(
                 minconn=1,
                 maxconn=10,
-                dsn=settings.database_url
+                dsn=settings.neon_connection_string
             )
             logger.info("✅ Neon connection pool initialized")
         except Exception as e:

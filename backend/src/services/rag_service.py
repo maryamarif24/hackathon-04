@@ -29,7 +29,7 @@ class RAGService:
         self.openai_service = openai_service
         logger.info("RAGService initialized")
 
-    def process_query(
+    async def process_query(
         self,
         question: str,
         context: Optional[str] = None,
@@ -77,7 +77,7 @@ class RAGService:
                 logger.info("Using book-wide mode")
 
             # Step 2: Generate answer using OpenAI Agents SDK
-            answer = self.openai_service.generate_answer(
+            answer = await self.openai_service.generate_answer(
                 question=question, retrieved_chunks=sources, mode=mode
             )
 

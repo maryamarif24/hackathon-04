@@ -10,8 +10,28 @@ from datetime import datetime
 # Import RAG models
 from src.models.rag_models import ChatQuery, ChatResponse, RetrievedChunk
 
+# Chunk Metadata model for Neon database
+from uuid import UUID
+from datetime import datetime
+from typing import Optional
+
+
+class ChunkMetadata(BaseModel):
+    """Metadata for a text chunk stored in Neon PostgreSQL database."""
+
+    chunk_id: UUID = Field(..., description="Unique identifier for the chunk")
+    chapter_id: int = Field(..., ge=1, le=6, description="Chapter number (1-6)")
+    section_id: str = Field(..., description="Section identifier within chapter")
+    section_title: str = Field(..., description="Human-readable section title")
+    chunk_index: int = Field(..., ge=0, description="Sequential index of chunk in section")
+    token_count: int = Field(..., ge=0, description="Number of tokens in chunk")
+    char_count: int = Field(..., ge=0, description="Number of characters in chunk")
+    preview_text: str = Field(..., max_length=200, description="First 200 characters for display")
+    indexed_at: datetime = Field(default_factory=datetime.utcnow, description="Timestamp when chunk was indexed")
+
+
 # Re-export for backwards compatibility
-__all__ = ["ChatQuery", "ChatResponse", "RetrievedChunk", "ErrorResponse", "HealthResponse"]
+__all__ = ["ChatQuery", "ChatResponse", "RetrievedChunk", "ChunkMetadata", "ErrorResponse", "HealthResponse"]
 
 
 # ============================================================================

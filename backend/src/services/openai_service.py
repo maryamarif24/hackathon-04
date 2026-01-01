@@ -1,5 +1,5 @@
 """
-LLM Service using OpenAI Agents SDK with OpenRouter.
+LLM Service using OpenAI Chat Completions API with OpenRouter.
 
 Uses Gemini 2.5-Flash via OpenRouter for answer generation.
 Handles grounded response generation with citation enforcement.
@@ -8,15 +8,13 @@ import logging
 import os
 from typing import List, Dict, Optional
 from openai import OpenAI
-from agents import Agent, Runner, RunConfig
-from agents.models import ModelProvider
 
 logger = logging.getLogger(__name__)
 
 
 class OpenRouterService:
     """
-    Service for generating answers using OpenAI Agents SDK with OpenRouter.
+    Service for generating answers using OpenAI Chat Completions API with OpenRouter.
 
     Uses Gemini 2.5-Flash via OpenRouter for cost-effective, high-quality responses.
     Enforces strict grounding in retrieved context.
@@ -25,19 +23,20 @@ class OpenRouterService:
     def __init__(
         self,
         api_key: Optional[str] = None,
-        model: str = "google-gemini-2.5-flash",
+        model: str = "google/gemini-pro",  # Updated default for OpenRouter
         temperature: float = 0.3,
         max_tokens: int = 800
     ):
         """
-        Initialize OpenRouter client configured for OpenAI Agent SDK.
+        Initialize OpenRouter client configured for OpenAI Chat Completions API.
 
         Args:
             api_key: OpenRouter API key (defaults to OPENROUTER_API_KEY env var)
-            model: Model name - use "google-gemini-2.5-flash" for Gemini via OpenRouter
+            model: Model name - use "google/gemini-pro" for Gemini via OpenRouter
             temperature: Sampling temperature (low for factual responses)
             max_tokens: Maximum response length
         """
+        # Use the provided api_key (from config), or fallback to OPENROUTER_API_KEY env var
         self.api_key = api_key or os.environ.get("OPENROUTER_API_KEY")
         self.model = model
         self.temperature = temperature
@@ -49,20 +48,35 @@ class OpenRouterService:
             base_url="https://openrouter.ai/api/v1",
         )
 
-        # Create the agent for chat
-        self.agent = self._create_agent()
-
         logger.info(f"OpenRouterService initialized: model={model}, temp={temperature}")
-        logger.info("Using Gemini 2.5-Flash via OpenRouter with OpenAI Agent SDK")
+        logger.info("Using OpenRouter with OpenAI Chat Completions API")
 
-    def _create_agent(self) -> Agent:
+    async def generate_answer(
+        self,
+        question: str,
+        retrieved_chunks: Optional[List[Dict]] = None,
+        mode: str = "book-wide"
+    ) -> str:
         """
-        Create the RAG chatbot agent using OpenAI Agents SDK.
+        Generate answer using OpenAI Chat Completions API with Gemini via OpenRouter.
+
+        Args:
+            question: User's question
+            retrieved_chunks: Optional list of RetrievedChunk dicts from RAG
+            mode: "book-wide" | "selected-text-only" | "chapter-aware"
 
         Returns:
-            Configured Agent instance
+            Generated answer text (always returns a valid string)
         """
-        instructions = """You are an educational AI assistant for the "Physical AI & Humanoid Robotics" textbook.
+        logger.info(
+            f"Generating answer: mode={mode}, chunks={len(retrieved_chunks or [])}, question='{question[:50]}...'"
+        )
+
+        # Build context from retrieved chunks
+        context_text = self._build_context(retrieved_chunks or [])
+
+        # Build the system message with instructions
+        system_message = """You are an educational AI assistant for the "Physical AI & Humanoid Robotics" textbook.
 
 Your role is to help learners understand textbook content by answering questions accurately and clearly.
 
@@ -84,36 +98,6 @@ When no context is provided:
 - Still be helpful and educational
 
 Remember: Your goal is to help learners succeed. Always provide a useful, accurate response."""
-
-        return Agent(
-            name="RAG Chatbot",
-            instructions=instructions,
-            model=self.model,
-        )
-
-    async def generate_answer(
-        self,
-        question: str,
-        retrieved_chunks: Optional[List[Dict]] = None,
-        mode: str = "book-wide"
-    ) -> str:
-        """
-        Generate answer using OpenAI Agent SDK with Gemini 2.5-Flash via OpenRouter.
-
-        Args:
-            question: User's question
-            retrieved_chunks: Optional list of RetrievedChunk dicts from RAG
-            mode: "book-wide" | "selected-text-only" | "chapter-aware"
-
-        Returns:
-            Generated answer text (always returns a valid string)
-        """
-        logger.info(
-            f"Generating answer: mode={mode}, chunks={len(retrieved_chunks or [])}, question='{question[:50]}...'"
-        )
-
-        # Build context from retrieved chunks
-        context_text = self._build_context(retrieved_chunks or [])
 
         # Build the user message with context
         if context_text:
@@ -139,18 +123,18 @@ Instructions:
 - Be helpful and thorough"""
 
         try:
-            # Run the agent using OpenAI Agent SDK
-            result = Runner.run(
-                starting_agent=self.agent,
-                input=user_message,
-                run_config=RunConfig(
-                    model_provider=self.client,
-                    max_tokens=self.max_tokens,
-                    temperature=self.temperature,
-                )
+            # Call the OpenAI Chat Completions API
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {"role": "system", "content": system_message},
+                    {"role": "user", "content": user_message}
+                ],
+                temperature=self.temperature,
+                max_tokens=self.max_tokens,
             )
 
-            answer = result.final_output.strip()
+            answer = response.choices[0].message.content.strip()
             logger.info(f"Answer generated: {len(answer)} characters")
             return answer
 

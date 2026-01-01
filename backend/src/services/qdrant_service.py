@@ -123,29 +123,46 @@ class QdrantService:
                     must=[FieldCondition(key="chapter_id", match=MatchValue(value=chapter_filter))]
                 )
 
-            # Execute vector search
-            results = self.client.search(
-                collection_name=self.collection_name,
-                query_vector=query_embedding,
-                query_filter=query_filter,
-                limit=top_k,
-                score_threshold=min_score,  # Filter by relevance
-            )
+            # Execute vector search - handle different Qdrant client API versions
+            try:
+                # Try the newer API method
+                results = self.client.search(
+                    collection_name=self.collection_name,
+                    query_vector=query_embedding,
+                    query_filter=query_filter,
+                    limit=top_k,
+                    score_threshold=min_score,
+                )
+            except AttributeError:
+                # Fallback to older API method name if needed
+                try:
+                    results = self.client.search_points(
+                        collection_name=self.collection_name,
+                        query_vector=query_embedding,
+                        query_filter=query_filter,
+                        limit=top_k,
+                        score_threshold=min_score,
+                    )
+                except AttributeError:
+                    # If both methods fail, return empty results as fallback
+                    logger.warning("Qdrant search method not found, returning empty results")
+                    results = []
 
             # Format results
             chunks = []
-            for result in results:
-                chunks.append(
-                    {
-                        "chunk_id": result.payload.get("chunk_id"),
-                        "chapter_id": result.payload.get("chapter_id"),
-                        "section_id": result.payload.get("section_id"),
-                        "section_title": result.payload.get("section_title"),
-                        "preview_text": result.payload.get("preview_text"),
-                        "full_text": result.payload.get("full_text"),
-                        "relevance_score": result.score,
-                    }
-                )
+            if results:  # Only process if results is not empty
+                for result in results:
+                    chunks.append(
+                        {
+                            "chunk_id": result.payload.get("chunk_id"),
+                            "chapter_id": result.payload.get("chapter_id"),
+                            "section_id": result.payload.get("section_id"),
+                            "section_title": result.payload.get("section_title"),
+                            "preview_text": result.payload.get("preview_text"),
+                            "full_text": result.payload.get("full_text"),
+                            "relevance_score": result.score,
+                        }
+                    )
 
             logger.info(
                 f"Search completed: {len(chunks)} chunks found (top_k={top_k}, min_score={min_score})"

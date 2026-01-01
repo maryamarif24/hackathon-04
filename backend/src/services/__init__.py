@@ -7,7 +7,7 @@ from app.config import settings
 from src.services.embedding_service import EmbeddingService
 from src.services.qdrant_service import QdrantService
 from src.services.retrieval_service import RetrievalService
-from src.services.openai_service import OpenAIService
+from src.services.openai_service import OpenRouterService
 from src.services.rag_service import RAGService
 
 # Initialize services in dependency order
@@ -28,9 +28,9 @@ retrieval_service = RetrievalService(
     embedding_service=embedding_service, qdrant_service=qdrant_service, config=settings
 )
 
-# 4. OpenAI service (no dependencies)
-openai_service = OpenAIService(
-    api_key=settings.openai_api_key,
+# 4. OpenAI service (no dependencies) - Using OpenRouter
+openai_service = OpenRouterService(
+    api_key=settings.openai_api_key,  # This will be used as the OpenRouter API key
     model=settings.openai_model,
     temperature=settings.openai_temperature,
     max_tokens=settings.openai_max_tokens,
