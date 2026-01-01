@@ -23,7 +23,7 @@ class OpenRouterService:
     def __init__(
         self,
         api_key: Optional[str] = None,
-        model: str = "google/gemini-pro",  # Updated default for OpenRouter
+        model: str = "google/gemini-flash-1.5",  # Updated default for OpenRouter - more reliable
         temperature: float = 0.3,
         max_tokens: int = 800
     ):
