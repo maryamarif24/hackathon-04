@@ -36,11 +36,14 @@ class OpenRouterService:
             temperature: Sampling temperature (low for factual responses)
             max_tokens: Maximum response length
         """
-        # Use the provided api_key (from config), or fallback to OPENROUTER_API_KEY env var
-        self.api_key = api_key or os.environ.get("OPENROUTER_API_KEY")
+        # Use only OPENROUTER_API_KEY environment variable
+        self.api_key = os.environ.get("OPENROUTER_API_KEY")
         self.model = model
         self.temperature = temperature
         self.max_tokens = max_tokens
+
+        if not self.api_key:
+            logger.warning("OPENROUTER_API_KEY environment variable not set")
 
         # Configure OpenAI client for OpenRouter
         self.client = OpenAI(

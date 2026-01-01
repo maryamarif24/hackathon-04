@@ -30,7 +30,6 @@ retrieval_service = RetrievalService(
 
 # 4. OpenAI service (no dependencies) - Using OpenRouter
 openai_service = OpenRouterService(
-    api_key=settings.openai_api_key,  # This will be used as the OpenRouter API key
     model=settings.openai_model,
     temperature=settings.openai_temperature,
     max_tokens=settings.openai_max_tokens,
