@@ -133,6 +133,9 @@ Instructions:
                 logger.error("OpenRouter API key is not configured or client not available")
                 return self._get_fallback_response(question, context_text)
 
+            logger.info(f"Making OpenRouter API call with model: {self.model}")
+            logger.info(f"API Key first 8 chars: {self.api_key[:8] if self.api_key else 'None'}")
+
             # Call the OpenAI Chat Completions API
             response = self.client.chat.completions.create(
                 model=self.model,
@@ -154,8 +157,19 @@ Instructions:
             logger.error(f"API Key configured: {bool(self.api_key)}")
             logger.error(f"Client available: {bool(self.client)}")
             logger.error(f"Model: {self.model}")
+            logger.error(f"Temperature: {self.temperature}")
+            logger.error(f"Max tokens: {self.max_tokens}")
             logger.error(f"Question length: {len(question)}")
             logger.error(f"Context length: {len(context_text)}")
+            logger.error(f"System message length: {len(system_message)}")
+            logger.error(f"User message length: {len(user_message)}")
+
+            # Check if it's a specific HTTP error
+            if hasattr(e, 'status_code'):
+                logger.error(f"HTTP Status Code: {e.status_code}")
+            if hasattr(e, 'response'):
+                logger.error(f"Response body: {e.response.text if hasattr(e.response, 'text') else 'No response body'}")
+
             # Return a helpful fallback response
             return self._get_fallback_response(question, context_text)
 
