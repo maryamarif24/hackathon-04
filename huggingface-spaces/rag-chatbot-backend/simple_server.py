@@ -65,7 +65,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="RAG Chatbot Backend",
     description="Physical AI Textbook Chatbot using Gemini 2.5-Flash via OpenRouter",
-    version="1.0.0",
+    version="2.0.0",
     lifespan=lifespan,
 )
 
@@ -111,7 +111,7 @@ class QueryRequest(BaseModel):
 async def root():
     return {
         "name": "RAG Chatbot Backend",
-        "version": "1.0.0",
+        "version": "2.0.0",
         "status": "running",
         "model": "google-gemini-2.5-flash",
         "provider": "OpenRouter",

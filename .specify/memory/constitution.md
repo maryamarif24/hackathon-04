@@ -1,7 +1,7 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: [TEMPLATE] → 1.0.0
+Version change: [TEMPLATE] → 2.0.0
 Modified principles: None (initial ratification)
 Added sections: All (Purpose, Behavior Rules, Retrieval Rules, User Interaction Rules, Safety Rules, Scope, Governance)
 Removed sections: None
@@ -118,4 +118,4 @@ Every PR involving the RAG chatbot system MUST:
 - Reference the specific principle(s) in the PR description
 - Include test cases validating the behavior if applicable
 
-**Version**: 1.0.0 | **Ratified**: 2025-12-30 | **Last Amended**: 2025-12-30
+**Version**: 2.0.0 | **Ratified**: 2025-12-30 | **Last Amended**: 2025-01-02

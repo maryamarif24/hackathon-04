@@ -1,6 +1,6 @@
 {
   "name": "physical-ai-textbook-mcp-server",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "MCP server for Physical AI & Humanoid Robotics textbook",
   "type": "module",
   "main": "index.js",

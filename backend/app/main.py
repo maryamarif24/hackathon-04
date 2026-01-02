@@ -57,7 +57,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Physical AI & Humanoid Robotics Textbook API",
     description="API for querying textbook content using RAG",
-    version="1.0.0",
+    version="2.0.0",
     lifespan=lifespan
 )
 
@@ -85,7 +85,7 @@ async def root():
     """Root endpoint with API information."""
     return {
         "name": "Physical AI Textbook API",
-        "version": "1.0.0",
+        "version": "2.0.0",
         "status": "running",
         "docs": "/docs",
         "health": "/health"
