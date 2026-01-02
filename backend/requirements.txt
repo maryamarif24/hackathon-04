@@ -7,10 +7,7 @@ slowapi>=0.1.9
 python-dotenv>=1.0.0
 pydantic>=2.6.0
 pydantic-settings>=2.2.0
-<<<<<<< HEAD
 openai>=1.10.0
 agents>=0.1.0
 python-frontmatter>=1.0.0
 numpy>=1.24.0
-=======
->>>>>>> master

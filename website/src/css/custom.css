@@ -1298,16 +1298,12 @@ body {
     font-size: 1.5rem !important;
     padding: 1.5rem !important;
   }
-<<<<<<< HEAD
-=======
-
   .chatbot-icon {
     width: 60px !important;
     height: 60px !important;
     bottom: 25px !important;
     right: 25px !important;
   }
->>>>>>> master
 }
 
 .navbar__logo svg {
