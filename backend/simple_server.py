@@ -13,8 +13,8 @@ app = FastAPI(title="Physical AI Textbook API (Mock)")
 # Enable CORS - allow all origins for deployment
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins (change to specific domain in production)
-    allow_credentials=False,  # Set to False when using wildcard origins
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )

@@ -43,7 +43,11 @@ const getApiUrl = () => {
     ? (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
     : false;
 
+<<<<<<< HEAD
   return isLocalhost ? 'http://localhost:8000/api/query' : '/api/query';
+=======
+  return isLocalhost ? 'http://localhost:8000/query' : '/api/query';
+>>>>>>> 001-rag-chatbot
 };
 
 export function useRAGQuery(): UseRAGQueryReturn {

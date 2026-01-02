@@ -1,9 +1,13 @@
 """
 <<<<<<< HEAD
+<<<<<<< HEAD
 Query API endpoint for RAG system.
 =======
 Query API endpoint for RAG chatbot.
 >>>>>>> master
+=======
+Query API endpoint for RAG system.
+>>>>>>> 001-rag-chatbot
 Handles POST /api/query requests with rate limiting.
 """
 import logging
@@ -76,10 +80,15 @@ async def query_textbook(request: Request, query: ChatQueryRequest):
         answer, sources, query_time_ms = rag_service.process_query(
             question=query.question,
 <<<<<<< HEAD
+<<<<<<< HEAD
             context=query.context,
             use_context_only=query.use_context_only,
 =======
 >>>>>>> master
+=======
+            context=query.context,
+            use_context_only=query.use_context_only,
+>>>>>>> 001-rag-chatbot
             top_k=query.top_k
         )
 
