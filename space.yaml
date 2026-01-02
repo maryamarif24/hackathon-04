@@ -1,0 +1,12 @@
+spec:
+  task: text-generation
+  sdk: docker
+  models:
+    - sentence-transformers/all-MiniLM-L6-v2
+  datasets: []
+  tags:
+    - text-generation
+    - api
+    - fastapi
+    - physical-ai
+    - educational

@@ -1,0 +1,60 @@
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+.Pytest_cache
+.coverage
+.pytest_cache
+.venv
+venv/
+env/
+.pydev
+
+# Git
+.git
+.gitignore
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Documentation
+docs/
+
+# Data
+*.csv
+*.json
+*.txt
+data/
+
+# Virtual environment
+venv/
+env/
+.venv
+
+# Local config files
+.env
+.env.local
+.env.test
+.env.production
+
+# Node modules (if present)
+node_modules/
+
+# Additional files to ignore
+*.env.backup
+*.env.local.backup
+*.env.production.backup
