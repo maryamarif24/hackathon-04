@@ -364,8 +364,9 @@ def get_elaboration_for_context(context: str) -> str:
 
 if __name__ == "__main__":
     import uvicorn
-    print("^ Starting Mock Physical AI Textbook API...")
+    print("🚀 Starting Mock Physical AI Textbook API...")
     print("This server provides sample responses for testing the chatbot UI")
-    print("API running at: http://localhost:8000")
-    print("Docs available at: http://localhost:8000/docs")
-    uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")
+    print("API running at: http://127.0.0.1:8000")
+    print("Docs available at: http://127.0.0.1:8000/docs")
+    print("Press Ctrl+C to stop the server")
+    uvicorn.run(app, host="127.0.0.1", port=8000, log_level="info")
