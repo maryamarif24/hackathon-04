@@ -27,10 +27,14 @@ class NeonService:
                 minconn=1,
                 maxconn=10,
 <<<<<<< HEAD
+<<<<<<< HEAD
                 dsn=settings.neon_connection_string
 =======
                 dsn=settings.database_url
 >>>>>>> master
+=======
+                dsn=settings.neon_connection_string
+>>>>>>> 001-rag-chatbot
             )
             logger.info("✅ Neon connection pool initialized")
         except Exception as e:
@@ -225,6 +229,9 @@ class NeonService:
                 self.release_connection(conn)
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 001-rag-chatbot
     def get_chunks_by_chapter(self, chapter_id: int) -> List[dict]:
         """
         Retrieve all chunks for a specific chapter.
@@ -264,8 +271,11 @@ class NeonService:
             if conn:
                 self.release_connection(conn)
 
+<<<<<<< HEAD
 =======
 >>>>>>> master
+=======
+>>>>>>> 001-rag-chatbot
     def health_check(self) -> bool:
         """
         Check if database is reachable.
