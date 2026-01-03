@@ -2,7 +2,16 @@
   "permissions": {
     "allow": [
       "Bash(npm install)",
-      "Bash(npm run start)"
+      "Bash(npm run start)",
+      "Bash(findstr \"\\\\.py\")",
+      "Bash(dir \"..\\\\..\\\\backend\\\\app\")",
+      "Bash(dir \"..\\\\..\\\\backend\")",
+      "Bash(findstr -i example)",
+      "Bash(python test_agent_integration.py)",
+      "Bash(del \"D:\\\\Spec-driven-dev\\\\Hackathon04\\\\hackathon-04\\\\backend\\\\test_agent_integration.py\")",
+      "Bash(npm run dev)",
+      "Bash(npm start)",
+      "Bash(npx docusaurus start --port 3001)"
     ]
   }
 }
