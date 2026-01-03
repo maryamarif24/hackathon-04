@@ -1,7 +1,5 @@
 /**
  * Root - Global wrapper component for Docusaurus
- *
- * This component wraps the entire Docusaurus application.
  */
 import React from 'react';
 
