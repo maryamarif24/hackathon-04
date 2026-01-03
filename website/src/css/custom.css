@@ -1298,18 +1298,13 @@ body {
     font-size: 1.5rem !important;
     padding: 1.5rem !important;
   }
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
+
   .chatbot-icon {
     width: 60px !important;
     height: 60px !important;
     bottom: 25px !important;
     right: 25px !important;
   }
-=======
->>>>>>> 001-rag-chatbot
->>>>>>> 24812637bc6902c72c5fa811a6bebcee27c56b66
 }
 
 .navbar__logo svg {
